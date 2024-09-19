@@ -11,9 +11,9 @@ dotenv.config();
 
 // Enable CORS
 const corsOptions = {
-    origin: 'https://portfolio3d-henna.vercel.app', 
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', 
-    allowedHeaders: 'Content-Type, Authorization', 
+    origin: 'https://portfolio3d-henna.vercel.app',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Authorization',
     exposedHeaders: 'Content-Range,X-Content-Range', // Expose these headers
     maxAge: 3600, // Preflight response is valid for 1 hour
     credentials: true, // Allow credentials  
@@ -40,69 +40,78 @@ const Count = mongoose.model("Count", countSchema);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+class CustomError extends Error {
+    constructor(message, statusCode, isOperational) {
+        super(message);
+        this.statusCode = statusCode;
+        this.isOperational = isOperational;
+    }
+}
+
+app.use((error, req, res, next) => {
+    if (!error.isOperational) {
+        console.error("Non-operational error:", error);
+        return res.status(500).json({ message: "Something went wrong" });
+    }
+
+    return res.status(error.statusCode).json({ message: error.message });
+});
+
 app.get("/", (req, res) => {
     res.send("Hello World");
 });
 
-// Endpoint to create a new count
 app.post("/api/create", async (req, res) => {
     try {
         if (!req.body) {
-            return res.status(400).send("Request body is empty");
+            throw new CustomError("Request body is empty", 400, true);
         }
         const { namespace, key, value = 0, enableReset = false, updateLowerbound = -1, updateUpperbound = 1 } = req.body;
         const newCount = new Count({ namespace, key, value, enableReset, updateLowerbound, updateUpperbound });
         await newCount.save();
         res.json(newCount);
     } catch (error) {
-        console.error("Error creating count:", error);
-        res.status(500).send("Error creating count");
+        if (error instanceof mongoose.Error.ValidationError) {
+            throw new CustomError(error.message, 400, true);
+        }
+        throw error;
     }
 });
 
-// Endpoint to get the current count
 app.get("/api/get/:namespace/:key", async (req, res) => {
     try {
-        const namespace = "akash", key = "kumar";
+        const namespace = req.params.namespace;
+        const key = req.params.key;
         const count = await Count.findOne({ namespace, key });
         if (!count) {
-            res.status(404).send("Count not found");
+            throw new CustomError("Count not found", 404, true);
         } else {
             res.json(count);
         }
     } catch (error) {
-        console.error("Error fetching count:", error);
-        res.status(500).send("Error fetching count");
+        throw error;
     }
 });
 
-// Endpoint to get the current count
-app.get("/api", async (req, res) => {
-    const namespace = "akash", key = "kumar";
-    const count = await Count.findOne({ namespace, key });
-    res.send(count);
-
-});
-// Endpoint to hit (increment) the count
 app.put("/api/hit/:namespace/:key", async (req, res) => {
     try {
-        const namespace = "akash", key = "kumar";
+        const namespace = req.params.namespace;
+        const key = req.params.key;
         const count = await Count.findOneAndUpdate({ namespace, key }, { $inc: { value: 1 } }, { new: true });
         if (!count) {
-            res.status(404).send("Count not found");
+            throw new CustomError("Count not found", 404, true);
         } else {
             res.json(count);
         }
     } catch (error) {
-        console.error("Error updating count:", error);
-        res.status(500).send("Error updating count");
+        throw error;
     }
 });
 
 app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
-    const namespace = "akash", key = "kumar";
+    const namespace = "akash";
+    const key = "kumar";
     const count = await Count.findOne({ namespace, key });
     console.log(count);
-
 });
