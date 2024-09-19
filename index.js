@@ -133,8 +133,12 @@ const connectWithRetry = () => {
 };
 
 // Start server function
-app.listen(PORT, () => {
+app.listen(PORT, async() => {
     console.log(`Server running on port ${PORT}`);
+    const namespace = "akash";
+    const key = "kumar";
+    const count = await Count.findOneAndUpdate({ namespace, key }, { $inc: { value: 1 } }, { new: true });
+    console.log(count);
 });
 
 // Call the reconnect function
