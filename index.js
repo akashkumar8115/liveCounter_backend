@@ -4,7 +4,7 @@ const app = express();
 const dotenv = require('dotenv');
 const cors = require("cors");
 const PORT = process.env.PORT || 5000;
-const URI = process.env.URI || "mongodb+srv://akash2884182:akash2884182@cluster0.my8k9ww.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const URI = process.env.URI || "mongodb+srv://akash2884182:akash2884182@cluster0.my8k9ww.mongodb.net/?retryWrites=true&w=majority";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -21,9 +21,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Connect to MongoDB
-mongoose.connect(URI)
-    .then(() => console.log("Connected to MongoDB"))
-    .catch((error) => console.error("Error connecting to MongoDB:", error));
+mongoose.connect(URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000 // Adjust timeout as needed
+})
+    .then(() => {
+        console.log("Connected to MongoDB");
+        // Start the server after the connection is established
+        startServer();
+    })
+    .catch((error) => {
+        console.error("Error connecting to MongoDB:", error);
+    });
 
 // Define a model for counts
 const countSchema = new mongoose.Schema({
@@ -57,61 +67,77 @@ app.use((error, req, res, next) => {
     return res.status(error.statusCode).json({ message: error.message });
 });
 
-app.get("/", (req, res) => {
-    res.send("Hello World");
-});
+function startServer() {
+    app.get("/", (req, res) => {
+        res.send("Hello World");
+    });
 
-app.post("/api/create", async (req, res) => {
-    try {
-        if (!req.body) {
-            throw new CustomError("Request body is empty", 400, true);
+    // Endpoint to create a new count
+    app.post("/api/create", async (req, res) => {
+        try {
+            if (!req.body) {
+                throw new CustomError("Request body is empty", 400, true);
+            }
+            const { namespace, key, value = 0, enableReset = false, updateLowerbound = -1, updateUpperbound = 1 } = req.body;
+            const newCount = new Count({ namespace, key, value, enableReset, updateLowerbound, updateUpperbound });
+            await newCount.save();
+            res.json(newCount);
+        } catch (error) {
+            if (error instanceof mongoose.Error.ValidationError) {
+                throw new CustomError(error.message, 400, true);
+            }
+            throw error;
         }
-        const { namespace, key, value = 0, enableReset = false, updateLowerbound = -1, updateUpperbound = 1 } = req.body;
-        const newCount = new Count({ namespace, key, value, enableReset, updateLowerbound, updateUpperbound });
-        await newCount.save();
-        res.json(newCount);
-    } catch (error) {
-        if (error instanceof mongoose.Error.ValidationError) {
-            throw new CustomError(error.message, 400, true);
-        }
-        throw error;
-    }
-});
+    });
 
-app.get("/api/get/:namespace/:key", async (req, res) => {
-    try {
-        const namespace = req.params.namespace;
-        const key = req.params.key;
-        const count = await Count.findOne({ namespace, key });
-        if (!count) {
-            throw new CustomError("Count not found", 404, true);
-        } else {
-            res.json(count);
+    // Endpoint to get the current count
+    app.get("/api/get/:namespace/:key", async (req, res) => {
+        try {
+            const namespace = req.params.namespace;
+            const key = req.params.key;
+            const count = await Count.findOne({ namespace, key });
+            if (!count) {
+                throw new CustomError("Count not found", 404, true);
+            } else {
+                res.json(count);
+            }
+        } catch (error) {
+            throw error;
         }
-    } catch (error) {
-        throw error;
-    }
-});
+    });
 
-app.put("/api/hit/:namespace/:key", async (req, res) => {
-    try {
-        const namespace = req.params.namespace;
-        const key = req.params.key;
+    // Endpoint to hit (increment) the count
+    app.put("/api/hit/:namespace/:key", async (req, res) => {
+        try {
+            const namespace = req.params.namespace;
+            const key = req.params.key;
+            const count = await Count.findOneAndUpdate({ namespace, key }, { $inc: { value: 1 } }, { new: true });
+            if (!count) {
+                throw new CustomError("Count not found", 404, true);
+            } else {
+                res.json(count);
+            }
+        } catch (error) {
+            throw error;
+        }
+    });
+
+
+    app.get("/api", async (req, res) => {
+        // res.json({message:"Welcome to the API!"})
+        const namespace = "akash";
+        const key = "kumar";
         const count = await Count.findOneAndUpdate({ namespace, key }, { $inc: { value: 1 } }, { new: true });
-        if (!count) {
-            throw new CustomError("Count not found", 404, true);
-        } else {
-            res.json(count);
-        }
-    } catch (error) {
-        throw error;
-    }
-});
+        console.log(count);
+        res.send(count)
+    })
 
-app.listen(PORT, async () => {
-    console.log(`Server running on port ${PORT}`);
-    const namespace = "akash";
-    const key = "kumar";
-    const count = await Count.findOne({ namespace, key });
-    console.log(count);
-});
+    app.listen(PORT, async () => {
+        console.log(`Server running on port ${PORT}`);
+        // const namespace = "akash";
+        // const key = "kumar";
+        // const count = await Count.findOneAndUpdate({ namespace, key }, { $inc: { value: 1 } }, { new: true });
+        // console.log(count);
+
+    });
+}
