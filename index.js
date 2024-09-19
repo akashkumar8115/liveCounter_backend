@@ -11,9 +11,9 @@ const URI = process.env.URI || "mongodb://akash2884182:akash2884182@cluster0.my8
 
 // Enable CORS
 const corsOptions = {
-    origin: ['https://portfolio3d-henna.vercel.app',"http://localhost:3000"],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Authorization',
+    origin: 'https://portfolio3d-henna.vercel.app', // Allow requests from this origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allow these methods
+    allowedHeaders: 'Content-Type, Authorization', // Allow these headers
     exposedHeaders: 'Content-Range,X-Content-Range', // Expose these headers
     maxAge: 3600, // Preflight response is valid for 1 hour
     credentials: true, // Allow credentials  
@@ -120,13 +120,12 @@ const connectWithRetry = () => {
     console.log("Attempting to connect to MongoDB...");
     mongoose
         .connect(URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             serverSelectionTimeoutMS: 10000, // 10 seconds timeout for server selection
             socketTimeoutMS: 10000, // 10 seconds timeout for socket operations
         })
         .then(() => {
             console.log("Connected to MongoDB");
+            startServer();
         })
         .catch((error) => {
             console.error("Error connecting to MongoDB:", error);
@@ -137,7 +136,6 @@ const connectWithRetry = () => {
 // Start server function
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-
 });
 
 // Call the reconnect function
