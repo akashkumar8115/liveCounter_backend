@@ -132,6 +132,9 @@ const connectWithRetry = () => {
         });
 };
 
+// Call the reconnect function
+connectWithRetry();
+
 // Start server function
 app.listen(PORT, async() => {
     console.log(`Server running on port ${PORT}`);
@@ -140,6 +143,3 @@ app.listen(PORT, async() => {
     const count = await Count.findOneAndUpdate({ namespace, key }, { $inc: { value: 1 } }, { new: true });
     console.log(count);
 });
-
-// Call the reconnect function
-connectWithRetry();
