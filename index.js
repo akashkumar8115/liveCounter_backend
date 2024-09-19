@@ -125,7 +125,6 @@ const connectWithRetry = () => {
         })
         .then(() => {
             console.log("Connected to MongoDB");
-            startServer();
         })
         .catch((error) => {
             console.error("Error connecting to MongoDB:", error);
