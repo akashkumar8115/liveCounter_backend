@@ -12,7 +12,7 @@ const URI = process.env.URI || "mongodb://akash2884182:akash2884182@cluster0.my8
 
 // Enable CORS
 const corsOptions = {
-    origin: 'https://portfolio3d-henna.vercel.app', // Allow requests from this origin
+    origin: '*', // Allow requests from this origin
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allow these methods
     allowedHeaders: 'Content-Type, Authorization', // Allow these headers
     exposedHeaders: 'Content-Range,X-Content-Range', // Expose these headers
