@@ -12,12 +12,12 @@ const URI = process.env.URI || "mongodb://akash2884182:akash2884182@cluster0.my8
 
 // Enable CORS
 const corsOptions = {
-    origin: '*', // Allow requests from this origin
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allow these methods
-    allowedHeaders: 'Content-Type, Authorization', // Allow these headers
-    exposedHeaders: 'Content-Range,X-Content-Range', // Expose these headers
-    maxAge: 3600, // Preflight response is valid for 1 hour
-    credentials: true, // Allow credentials  
+    origin: ['*',"https://akash8115.netlify.app/","https://portfolio3d-henna.vercel.app/"], // Allow requests from this origin
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',  
+    allowedHeaders: 'Content-Type, Authorization',  
+    exposedHeaders: 'Content-Range,X-Content-Range',  
+    maxAge: 3600,  
+    credentials: true,  
 };
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({ extended: true }));
